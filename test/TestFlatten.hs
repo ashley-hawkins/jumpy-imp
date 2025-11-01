@@ -29,6 +29,9 @@ mkIf ln cond thenBranch elseBranch =
       lineNumber = ln
     }
 
+mkReturn :: Int -> Expression -> Statement
+mkReturn ln expr = Statement {uniquePart = ReturnStatement {returnValue = expr}, lineNumber = ln}
+
 shouldMatchCount :: Statement -> Assertion
 shouldMatchCount stmt = do
   let (_, instrs) = flattenStatement 0 Map.empty stmt
@@ -42,6 +45,7 @@ tests = testGroup "flattenStatement vs getInstructionCount"
     testCase "if without else" $ shouldMatchCount (mkIf 5 (LiteralExpression (LiteralBool True)) [mkAssign 4 "y"] Nothing),
     testCase "if with else" $ shouldMatchCount (mkIf 8 (LiteralExpression (LiteralBool False)) [mkAssign 6 "y"] (Just [mkAssign 7 "z"])),
     testCase "nested ifs" $ shouldMatchCount (let innerThen = mkAssign 11 "i"; innerIf = mkIf 10 (LiteralExpression (LiteralBool True)) [innerThen] Nothing in mkIf 9 (LiteralExpression (LiteralBool False)) [innerIf] Nothing)
+    , testCase "return" $ shouldMatchCount (mkReturn 12 (LiteralExpression (LiteralFloat 3.14)))
   ]
 
 main :: IO ()

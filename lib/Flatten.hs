@@ -4,13 +4,14 @@ import Data.List qualified as List
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Tree (flatten)
-import Language (Expression (UnaryExpression), Statement (Statement), StatementUniquePart (AssignmentStatement, GoToStatement, IfStatement, SwapStatement), UnaryOp (UnaryOp), UnaryOperator (UnaryNot), VariableAccess)
+import Language (Expression (UnaryExpression), Statement (Statement), StatementUniquePart (AssignmentStatement, GoToStatement, IfStatement, SwapStatement, ReturnStatement), UnaryOp (UnaryOp), UnaryOperator (UnaryNot), VariableAccess)
 import Language qualified
 
 data Instruction
   = Jump Int (Maybe Expression)
   | SwapVariables VariableAccess VariableAccess
   | AssignVariable VariableAccess Expression
+  | ReturnValue Expression
   deriving (Show)
 
 unconditionalJump n = Jump n Nothing
@@ -30,6 +31,7 @@ getInstructionCount (Statement uniquePart lineNumber) = case uniquePart of
   GoToStatement _ -> 1
   SwapStatement _ _ -> 1
   AssignmentStatement _ _ -> 1
+  ReturnStatement _ -> 1
   IfStatement _ thenBranch elseBranch ->
     1 + getListInstructionCount thenBranch + case elseBranch of
       Just stmts -> getListInstructionCount stmts + 1
@@ -44,22 +46,20 @@ flattenStatement :: Int -> LineMap -> Statement -> (LineMap, [IntermediateInstru
 flattenStatement currentOffset lineMap statement =
   let (Statement uniquePart lineNumber) = statement
       updatedLineMap = Map.insert lineNumber currentOffset lineMap
-   in case uniquePart of
-        GoToStatement targetLine -> (updatedLineMap, [JumpByLine targetLine Nothing])
-        SwapStatement var1 var2 -> (updatedLineMap, [Final (SwapVariables var1 var2)])
-        AssignmentStatement var expr -> (updatedLineMap, [Final (AssignVariable var expr)])
-        IfStatement cond thenBranch elseBranch -> flattenIfStatement updatedLineMap (getInstructionCount statement) cond thenBranch elseBranch
+  in case uniquePart of
+       GoToStatement targetLine -> (updatedLineMap, [JumpByLine targetLine Nothing])
+       SwapStatement var1 var2 -> (updatedLineMap, [Final (SwapVariables var1 var2)])
+       AssignmentStatement var expr -> (updatedLineMap, [Final (AssignVariable var expr)])
+       ReturnStatement expr -> (updatedLineMap, [Final (ReturnValue expr)])
+       IfStatement cond thenBranch elseBranch -> flattenIfStatement updatedLineMap (getInstructionCount statement) cond thenBranch elseBranch
   where
     flattenIfStatement updatedLineMap totalLength cond thenBranch elseBranch =
       let endOffset = currentOffset + totalLength
           (thenLineMap, thenInstructions) = flattenStatementList 1 updatedLineMap thenBranch
           (falseJumpOffset, elseLineMap, elseInstructions) = case flattenStatementList (1 + List.length thenInstructions) thenLineMap <$> elseBranch of
-            -- Extra jump to get past the else branch when reaching the end of the "then" part.
-            -- False jump offset is set to the start of the else branch's instructions.
             Just (lm, instrs) -> (currentOffset + List.length thenInstructions + 1, lm, Final (unconditionalJump endOffset) : instrs)
-            -- If there's no else branch, we just jump to the end when the condition is false.
             Nothing -> (endOffset, thenLineMap, [])
-       in (elseLineMap, Final (conditionalJump falseJumpOffset (UnaryExpression (UnaryOp UnaryNot cond))) : thenInstructions ++ elseInstructions)
+      in (elseLineMap, Final (conditionalJump falseJumpOffset (UnaryExpression (UnaryOp UnaryNot cond))) : thenInstructions ++ elseInstructions)
 
 flattenStatementList :: Int -> LineMap -> [Statement] -> (LineMap, [IntermediateInstruction])
 flattenStatementList currentOffset lineMap = List.foldl' step (lineMap, [])

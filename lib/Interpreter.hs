@@ -129,6 +129,9 @@ interpretStep env instr =
     Flatten.AssignVariable (VariableAccess var) value -> case assignVariable env var value of
       Right newEnv -> (newEnv, Right Continue)
       Left err -> (env, Left err)
+    Flatten.ReturnValue valueExpr -> case evaluateExpression env valueExpr of
+      Right val -> (env, Right (Halt val))
+      Left err -> (env, Left err)
 
 interpretProgram :: [Instruction] -> Result InterpreterState
 interpretProgram instructions =

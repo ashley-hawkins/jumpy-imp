@@ -23,6 +23,9 @@ data StatementUniquePart
       { var1 :: VariableAccess,
         var2 :: VariableAccess
       }
+  | ReturnStatement
+      { returnValue :: Expression
+      }
   deriving (Show, Eq)
 
 data Statement = Statement

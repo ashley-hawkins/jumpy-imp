@@ -7,7 +7,7 @@ import Control.Monad.Combinators.Expr
 import Data.Functor (($>))
 import Data.Text (Text)
 import Data.Void (Void)
-import Language (BinaryOp (BinaryOp), BinaryOperator (..), Expression (..), Literal (..), Statement (..), StatementList, StatementUniquePart (..), UnaryOp (..), VariableAccess (..), UnaryOperator (..))
+import Language (BinaryOp (BinaryOp), BinaryOperator (..), Expression (..), Literal (..), Statement (..), StatementList, StatementUniquePart (..), UnaryOp (..), UnaryOperator (..), VariableAccess (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
@@ -58,7 +58,7 @@ pBool =
 pStatement :: Parser Statement
 pStatement = do
   currentLineNumber <- unPos . sourceLine <$> getSourcePos
-  uniquePart <- choice [try pGoToStatement, try pSwapStatement, try pAssignmentStatement, try pIfStatement]
+  uniquePart <- choice [ try pReturnStatement, try pGoToStatement, try pSwapStatement, try pAssignmentStatement, try pIfStatement]
   return $ Statement uniquePart currentLineNumber
 
 pIfStatementHelper :: Parser a -> Maybe Pos -> Parser (a, StatementList)
@@ -86,13 +86,18 @@ pAssignmentStatement :: Parser StatementUniquePart
 pAssignmentStatement = do
   var <- pVariable
   _ <- symbol "<-"
-  AssignmentStatement var <$> expr
+  AssignmentStatement var <$> expr <* eol
 
 pGoToStatement :: Parser StatementUniquePart
 pGoToStatement = do
   _ <- pKeyword "goto" >> sc >> pKeyword "line"
   line <- lexeme L.decimal
   return (GoToStatement line)
+
+pReturnStatement :: Parser StatementUniquePart
+pReturnStatement = do
+  _ <- pKeyword "return"
+  ReturnStatement <$> expr <* eol
 
 pIfStatementIntroduction :: Parser (Pos, Expression)
 pIfStatementIntroduction = do
