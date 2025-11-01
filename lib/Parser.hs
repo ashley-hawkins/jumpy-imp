@@ -7,7 +7,6 @@ import Control.Monad.Combinators.Expr
 import Data.Functor (($>))
 import Data.Text (Text)
 import Data.Void (Void)
-import Debug.Trace (traceM)
 import Language (BinaryOp (BinaryOp), BinaryOperator (..), Expression (..), Literal (..), Statement (..), StatementList, StatementUniquePart (..), UnaryOp (..), VariableAccess (..), UnaryOperator (..))
 import Text.Megaparsec
 import Text.Megaparsec.Char

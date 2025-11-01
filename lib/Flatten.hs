@@ -4,7 +4,6 @@ import Data.List qualified as List
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Tree (flatten)
-import Debug.Trace (trace, traceM)
 import Language (Expression (UnaryExpression), Statement (Statement), StatementUniquePart (AssignmentStatement, GoToStatement, IfStatement, SwapStatement), UnaryOp (UnaryOp), UnaryOperator (UnaryNot), VariableAccess)
 import Language qualified
 

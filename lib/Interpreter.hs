@@ -3,7 +3,6 @@ module Interpreter where
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
-import Debug.Trace (traceM)
 import Flatten hiding (Jump)
 import Flatten qualified
 import Language
@@ -43,9 +42,7 @@ stepState state newEnv controlFlow = case controlFlow of
 interpretCurrentInstruction :: InterpreterState -> (Environment, Result ControlFlow)
 interpretCurrentInstruction InterpreterState {environment = env, programCounter = pc, program = prog} =
   let currentInstruction = prog !! pc
-   in do
-        traceM ("Interpreting instruction " ++ show pc ++ ": " ++ show currentInstruction)
-        interpretStep env currentInstruction
+   in interpretStep env currentInstruction
 
 interpret :: InterpreterState -> Result InterpreterState
 interpret state | not $ pcIsValid (programCounter state) = Right state
