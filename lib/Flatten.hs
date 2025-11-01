@@ -3,6 +3,8 @@ module Flatten where
 import Data.List qualified as List
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Tree (flatten)
+import Debug.Trace (trace, traceM)
 import Language (Expression (UnaryExpression), Statement (Statement), StatementUniquePart (AssignmentStatement, GoToStatement, IfStatement, SwapStatement), UnaryOp (UnaryOp), UnaryOperator (UnaryNot), VariableAccess)
 import Language qualified
 
@@ -66,3 +68,11 @@ flattenStatementList currentOffset lineMap = List.foldl' step (lineMap, [])
     step (lm, instrs) stmt =
       let (newLm, newInstrs) = flattenStatement (currentOffset + List.length instrs) lm stmt
        in (newLm, instrs ++ newInstrs)
+
+flatten :: [Statement] -> [Instruction]
+flatten statements =
+  let (lineMap, intermediateInstructions) = flattenStatementList 0 Map.empty statements
+   in map (finalizeInstruction lineMap) intermediateInstructions
+  where
+    finalizeInstruction lineMap (Final instr) = instr
+    finalizeInstruction lineMap (JumpByLine targetLine cond) = Jump (lineMap Map.! targetLine) cond

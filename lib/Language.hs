@@ -46,7 +46,7 @@ data UnaryOp = UnaryOp
   }
   deriving (Show, Eq)
 
-data Literal = LiteralFloat Double | LiteralBool Bool | LiteralString String
+data Literal = LiteralFloat Double | LiteralBool Bool
   deriving (Show, Eq)
 
 newtype VariableAccess = VariableAccess String

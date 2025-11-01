@@ -29,7 +29,7 @@ version:            0.1.0.0
 -- description:
 
 -- The license under which the package is released.
-license:            GPL-3.0-only
+-- license:            
 
 -- The file containing the license text.
 license-file:       LICENSE
@@ -75,7 +75,7 @@ executable JumpyImp
 
 library
     hs-source-dirs: lib
-    exposed-modules: Language, Parser, Flatten
+    exposed-modules: Language, Parser, Flatten, Interpreter
     build-depends: base ^>=4.18.3.0, megaparsec ^>=9.7.0, text ^>=1.2.5.0, parser-combinators ^>=1.3.0, containers ^>=0.7
     default-extensions: OverloadedStrings
     default-language: GHC2021
