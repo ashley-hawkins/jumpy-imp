@@ -65,7 +65,7 @@ executable JumpyImp
     default-extensions: OverloadedStrings
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0, JumpyImp
+    build-depends:    base ^>=4.18.3.0, pretty-simple, containers, megaparsec, JumpyImp
 
     -- Directories containing source files.
     hs-source-dirs:   app
@@ -76,7 +76,7 @@ executable JumpyImp
 library
     hs-source-dirs: lib
     exposed-modules: Language, Parser, Flatten, Interpreter
-    build-depends: base ^>=4.18.3.0, megaparsec ^>=9.7.0, text ^>=1.2.5.0, parser-combinators ^>=1.3.0, containers ^>=0.7
+    build-depends: base ^>=4.18.3.0, megaparsec ^>=9.7.0, pretty-simple, text ^>=1.2.5.0, parser-combinators ^>=1.3.0, containers ^>=0.7
     default-extensions: OverloadedStrings
     default-language: GHC2021
 

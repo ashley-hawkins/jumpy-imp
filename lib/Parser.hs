@@ -4,8 +4,11 @@ module Parser where
 
 import Control.Monad (void)
 import Control.Monad.Combinators.Expr
+import Data.Either (fromRight)
 import Data.Functor (($>))
+import Data.String (IsString (fromString))
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Void (Void)
 import Language (BinaryOp (BinaryOp), BinaryOperator (..), Expression (..), Literal (..), Statement (..), StatementList, StatementUniquePart (..), UnaryOp (..), UnaryOperator (..), VariableAccess (..))
 import Text.Megaparsec
@@ -58,7 +61,7 @@ pBool =
 pStatement :: Parser Statement
 pStatement = do
   currentLineNumber <- unPos . sourceLine <$> getSourcePos
-  uniquePart <- choice [ try pReturnStatement, try pGoToStatement, try pSwapStatement, try pAssignmentStatement, try pIfStatement]
+  uniquePart <- choice [try pReturnStatement, try pGoToStatement, try pSwapStatement, try pAssignmentStatement, try pIfStatement] <?> "statement"
   return $ Statement uniquePart currentLineNumber
 
 pIfStatementHelper :: Parser a -> Maybe Pos -> Parser (a, StatementList)
@@ -80,7 +83,7 @@ pSwapStatement :: Parser StatementUniquePart
 pSwapStatement = do
   var1 <- pVariable
   _ <- symbol "<->"
-  SwapStatement var1 <$> pVariable
+  SwapStatement var1 <$> pVariable <* eol
 
 pAssignmentStatement :: Parser StatementUniquePart
 pAssignmentStatement = do
@@ -130,23 +133,41 @@ expr = makeExprParser term table <?> "expression"
 table =
   [ [ binaryOp Addition "+",
       binaryOp Subtraction "-",
-      binaryOp And "&&",
-      binaryOp Or "||",
-      unaryOp UnaryNot "!",
       unaryOp UnaryNegate "-",
       unaryOp UnaryPlus "+"
     ],
     [ binaryOp Multiplication "*",
       binaryOp Division "/"
     ],
-    [ binaryOp Gt ">",
-      binaryOp Lt "<",
-      binaryOp Gte ">=",
+    [ binaryOp Gte ">=",
       binaryOp Lte "<=",
+      binaryOp Gt ">",
+      binaryOp Lt "<",
       binaryOp Eq "=",
       binaryOp Neq "/="
+    ],
+    [ binaryOp Or "||"
+    ],
+    [ binaryOp And "&&"
+    ],
+    [ unaryOp UnaryNot "!"
     ]
   ]
+
+pEnvArgument :: Parser (VariableAccess, Expression)
+pEnvArgument = do
+  var <- pVariable
+  _ <- symbol ":"
+  expression <- expr
+  return (var, expression)
+
+stringToEnvArgument :: String -> Either (ParseErrorBundle Text Void) (VariableAccess, Expression)
+stringToEnvArgument str =
+  let txt = fromString str
+   in parse (pEnvArgument <* eof) "" txt
+
+parseFileToProgram :: String -> Text -> Either (ParseErrorBundle Text Void) [Statement]
+parseFileToProgram = parse (pTopLevelStatementList <* (eof <?> "Top level EOF"))
 
 binaryOp opValue opText = InfixL ((\l r -> BinaryExpression (BinaryOp l opValue r)) <$ L.symbol sc opText)
 

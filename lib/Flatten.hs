@@ -56,8 +56,8 @@ flattenStatement currentOffset lineMap statement =
     flattenIfStatement updatedLineMap totalLength cond thenBranch elseBranch =
       let endOffset = currentOffset + totalLength
           (thenLineMap, thenInstructions) = flattenStatementList 1 updatedLineMap thenBranch
-          (falseJumpOffset, elseLineMap, elseInstructions) = case flattenStatementList (1 + List.length thenInstructions) thenLineMap <$> elseBranch of
-            Just (lm, instrs) -> (currentOffset + List.length thenInstructions + 1, lm, Final (unconditionalJump endOffset) : instrs)
+          (falseJumpOffset, elseLineMap, elseInstructions) = case flattenStatementList (3 + List.length thenInstructions) thenLineMap <$> elseBranch of
+            Just (lm, instrs) -> (currentOffset + List.length thenInstructions + 2, lm, Final (unconditionalJump endOffset) : instrs)
             Nothing -> (endOffset, thenLineMap, [])
       in (elseLineMap, Final (conditionalJump falseJumpOffset (UnaryExpression (UnaryOp UnaryNot cond))) : thenInstructions ++ elseInstructions)
 
@@ -75,3 +75,6 @@ flatten statements =
   where
     finalizeInstruction lineMap (Final instr) = instr
     finalizeInstruction lineMap (JumpByLine targetLine cond) = Jump (lineMap Map.! targetLine) cond
+
+envArgumentToAssignmentInstruction :: (VariableAccess, Expression) -> Instruction
+envArgumentToAssignmentInstruction (var, expr) = AssignVariable var expr

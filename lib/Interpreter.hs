@@ -2,10 +2,14 @@ module Interpreter where
 
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Text (Text)
+import Data.Text (Text, pack)
+import Data.Text qualified as T
+import Data.Text.Lazy (unpack)
+import Debug.Trace (traceM)
 import Flatten hiding (Jump)
 import Flatten qualified
 import Language
+import Text.Pretty.Simple (pShow)
 
 data SingleValue
   = NumericValue Double
@@ -76,9 +80,11 @@ evaluateBinaryOp env (BinaryOp left op right) = do
       Gte -> Right (Single (BoolValue (l >= r)))
       Eq -> Right (Single (BoolValue (l == r)))
       Neq -> Right (Single (BoolValue (l /= r)))
+      _ -> Left "Type mismatch in binary operation"
     (Single (BoolValue b1), Single (BoolValue b2)) -> case op of
       And -> Right (Single (BoolValue (b1 && b2)))
       Or -> Right (Single (BoolValue (b1 || b2)))
+      _ -> Left "Type mismatch in binary operation"
     _ -> Left "Type mismatch in binary operation"
 
 evaluateUnaryOp :: Environment -> UnaryOp -> Result Value
@@ -107,10 +113,12 @@ evaluateJumpInstruction env n condition = case condition of
   Just e -> conditionallyJump e
   Nothing -> Right (Jump n)
   where
+    conditionallyJump :: Expression -> Result ControlFlow
     conditionallyJump e = case evaluateExpression env e of
       Right (Single (BoolValue True)) -> Right (Jump n)
       Right (Single (BoolValue False)) -> Right Continue
-      _ -> Left "Invalid condition for jump"
+      Right _ -> Left "Invalid condition for jump: Not a boolean"
+      Left err -> Left $ T.pack ("Invalid condition for jump: " ++ show err)
 
 assignVariable :: Environment -> String -> Expression -> Result Environment
 assignVariable env var value = do
@@ -118,7 +126,8 @@ assignVariable env var value = do
   return $ Map.insert var evaluatedValue env
 
 interpretStep :: Environment -> Instruction -> (Environment, Result ControlFlow)
-interpretStep env instr =
+interpretStep env instr = do
+  -- traceM ("Interpreting instruction: " ++ unpack (pShow instr))
   case instr of
     Flatten.Jump n condition -> case evaluateJumpInstruction env n condition of
       Right ctrlFlow -> (env, Right ctrlFlow)
@@ -138,6 +147,15 @@ interpretProgram instructions =
   interpret
     InterpreterState
       { environment = Map.empty,
+        programCounter = 0,
+        program = instructions
+      }
+
+interpretProgramWithEnv :: [Instruction] -> Environment -> Result InterpreterState
+interpretProgramWithEnv instructions env =
+  interpret
+    InterpreterState
+      { environment = env,
         programCounter = 0,
         program = instructions
       }
