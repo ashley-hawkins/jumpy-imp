@@ -1,8 +1,6 @@
 -- Ugly!!!
-
 -- I totally copied some of the things done in https://markkarpov.com/tutorial/megaparsec.html while misunderstanding a lot of it.
 -- So this parser is kind of broken. Rewriting will be fun.........................
-
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Parser where
@@ -66,7 +64,7 @@ pBool =
 pStatement :: Parser Statement
 pStatement = do
   currentLineNumber <- unPos . sourceLine <$> getSourcePos
-  uniquePart <- choice [try pReturnStatement, try pGoToStatement, try pSwapStatement, try pAssignmentStatement, try pIfStatement] <?> "statement"
+  uniquePart <- choice [pIfStatement, pReturnStatement, pGoToStatement, try pSwapStatement, pAssignmentStatement] <?> "statement"
   return $ Statement uniquePart currentLineNumber
 
 pIfStatementHelper :: Parser a -> Maybe Pos -> Parser (a, StatementList)
@@ -119,7 +117,7 @@ pIfStatement = do
   return (IfStatement thenCond thenBranch elseBranch)
 
 pLiteral :: Parser Literal
-pLiteral = choice [try pNumber, try pBool]
+pLiteral = choice [pBool, pNumber]
 
 pTopLevelStatementList :: Parser [Statement]
 pTopLevelStatementList = L.nonIndented scn (some pStatement)
@@ -127,8 +125,8 @@ pTopLevelStatementList = L.nonIndented scn (some pStatement)
 term :: Parser Expression
 term =
   choice
-    [ try (LiteralExpression <$> pLiteral),
-      try (VariableExpression <$> pVariable),
+    [ LiteralExpression <$> pLiteral,
+      VariableExpression <$> pVariable,
       parens expr
     ]
 
