@@ -88,13 +88,13 @@ pSwapStatement :: Parser StatementUniquePart
 pSwapStatement = do
   var1 <- pVariable
   _ <- symbol "<->"
-  SwapStatement var1 <$> pVariable <* eol
+  SwapStatement var1 <$> pVariable <* some eol
 
 pAssignmentStatement :: Parser StatementUniquePart
 pAssignmentStatement = do
   var <- pVariable
   _ <- symbol "<-"
-  AssignmentStatement var <$> expr <* eol
+  AssignmentStatement var <$> expr <* some eol
 
 pGoToStatement :: Parser StatementUniquePart
 pGoToStatement = do
@@ -105,7 +105,7 @@ pGoToStatement = do
 pReturnStatement :: Parser StatementUniquePart
 pReturnStatement = do
   _ <- pKeyword "return"
-  ReturnStatement <$> expr <* eol
+  ReturnStatement <$> expr <* some eol
 
 pIfStatementIntroduction :: Parser (Pos, Expression)
 pIfStatementIntroduction = do

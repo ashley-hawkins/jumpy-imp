@@ -2,7 +2,7 @@
 
 Unimplemented features: Arrays
 
-Known parser issues: Empty lines cause a parsing error, nonsensical and unhelpful error messages
+Known parser issues: Comments on separate lines cause a parsing error, nonsensical and unhelpful error messages
 
 I'm gonna reimplement the parser and implement arrays in the new version I think.
 
@@ -13,4 +13,7 @@ I tried to write comments at the top of each file giving an outline of the file 
 Example of how to use it:
 
 `cabal run JumpyImp -- even.ji n:10` (Should return true)
+
 `cabal run JumpyImp -- even.ji n:11` (Should return false)
+
+In general, the first argument is the file name of the program you want to run, and the other arguments are setting initial values for input variables, so `n:10` means give `n` a value of `10`.
