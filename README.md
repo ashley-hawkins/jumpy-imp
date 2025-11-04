@@ -2,6 +2,10 @@
 
 Unimplemented features: Arrays
 
+Unlike in slides, commented and empty lines do count towards the line numbers used for `goto line` statements.
+
+The line number used in the `goto line` statement will just be the line number shown by any text editor that supports showing line numbers.
+
 Also if you actually read the code then I apologise because this was my first actual program written in Haskell and I know it's really ugly compared to the stuff people can write when they're super familiar with all the syntax available to make programs more concise.
 
 I tried to write comments at the top of each file giving an outline of the file but it's still a really terribly organised project.

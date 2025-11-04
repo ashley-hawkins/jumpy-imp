@@ -1,3 +1,5 @@
+//  input: an integer, n ≥ 0
+// output: true if n is even, false otherwise
 currentVal <- n
 currentVal <- currentVal - 2
 if currentVal = 0 then
@@ -6,4 +8,4 @@ else
     if currentVal < 0 then
         return false
     else
-        goto line 2
+        goto line 4
