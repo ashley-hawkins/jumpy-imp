@@ -1,13 +1,11 @@
+-- Just interprets the command line arguments and runs the program and outputs the result.
 module Main where
 
-import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.String (fromString)
 import Flatten
-import Flatten (envArgumentToAssignmentInstruction)
 import Interpreter
-import Interpreter (InterpreterState (program))
 import Parser
 import System.Environment (getArgs)
 import Text.Pretty.Simple
