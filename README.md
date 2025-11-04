@@ -2,7 +2,7 @@
 
 Unimplemented features: Arrays
 
-Known parser issues: Empty lines cause a parsing error
+Known parser issues: Empty lines cause a parsing error, nonsensical and unhelpful error messages
 
 I'm gonna reimplement the parser and implement arrays in the new version I think.
 
