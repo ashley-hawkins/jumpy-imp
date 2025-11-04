@@ -1,3 +1,4 @@
+-- Everything needed to represent the AST basically.
 module Language where
 
 data BinaryOperator = Addition | Subtraction | Multiplication | Division | Lt | Gt | Lte | Gte | Eq | Neq | And | Or

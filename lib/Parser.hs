@@ -1,3 +1,8 @@
+-- Ugly!!!
+
+-- I totally copied some of the things done in https://markkarpov.com/tutorial/megaparsec.html while misunderstanding a lot of it.
+-- So this parser is kind of broken. Rewriting will be fun.........................
+
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Parser where

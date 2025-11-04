@@ -1,3 +1,8 @@
+-- Runs the list of instructions
+-- The function "interpret" is responsible for the main interpreter loop
+-- The function "interpretProgram" just sets up the initial interpreter state and calls "interpret"
+-- The function "interpretStep" executes a single instruction and updates the interpreter state
+
 module Interpreter where
 
 import Data.Map (Map)

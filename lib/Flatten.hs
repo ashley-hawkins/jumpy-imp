@@ -1,3 +1,7 @@
+-- Transforms the AST into a flat sequence of instructions
+
+-- Expressions don't need to be flattened because you can't "goto" into the middle
+-- of an expression so the interpreter is able to just evaluate the expression tree recursively
 module Flatten where
 
 import Data.List qualified as List
