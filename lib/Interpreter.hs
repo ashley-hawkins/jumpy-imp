@@ -5,6 +5,8 @@
 
 module Interpreter where
 
+import Data.Aeson (ToJSON)
+import Data.Aeson.Types (FromJSON)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text, pack)
@@ -13,18 +15,27 @@ import Data.Text.Lazy (unpack)
 import Debug.Trace (traceM)
 import Flatten hiding (Jump)
 import Flatten qualified
+import GHC.Generics (Generic)
 import Language
 import Text.Pretty.Simple (pShow)
 
 data SingleValue
   = NumericValue Double
   | BoolValue Bool
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+
+instance ToJSON SingleValue
+
+instance FromJSON SingleValue
 
 type Environment = Map String Value
 
 data Value = Single SingleValue | Array [SingleValue] | Undefined
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+
+instance ToJSON Value
+
+instance FromJSON Value
 
 data InterpreterState = InterpreterState
   { environment :: Environment,

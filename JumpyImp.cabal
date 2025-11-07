@@ -54,6 +54,25 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+executable JumpyImpJson
+    -- Import common warning flags.
+    import:           warnings
+
+    -- .hs or .lhs file containing the Main module.
+    main-is:          JsonMain.hs
+
+    -- Main only; other modules are provided by the library below.
+    default-extensions: OverloadedStrings
+
+    -- Other library packages from which modules are imported.
+    build-depends:    base >=4.18.3.0, pretty-simple, containers, megaparsec, JumpyImp
+
+    -- Directories containing source files.
+    hs-source-dirs:   app
+
+    -- Base language which the package is written in.
+    default-language: GHC2021
+
 executable JumpyImp
     -- Import common warning flags.
     import:           warnings
@@ -65,7 +84,7 @@ executable JumpyImp
     default-extensions: OverloadedStrings
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0, pretty-simple, containers, megaparsec, JumpyImp
+    build-depends:    base >=4.18.3.0, pretty-simple, containers, megaparsec, JumpyImp
 
     -- Directories containing source files.
     hs-source-dirs:   app
@@ -75,8 +94,8 @@ executable JumpyImp
 
 library
     hs-source-dirs: lib
-    exposed-modules: Language, Parser, Flatten, Interpreter
-    build-depends: base ^>=4.18.3.0, megaparsec ^>=9.7.0, pretty-simple, text ^>=1.2.5.0, parser-combinators ^>=1.3.0, containers ^>=0.7
+    exposed-modules: Language, Parser, Flatten, Interpreter, Run
+    build-depends: base >=4.18.3.0, megaparsec ^>=9.7.0, bytestring, pretty-simple, aeson, text >= 2, parser-combinators ^>=1.3.0, containers ^>=0.7
     default-extensions: OverloadedStrings
     default-language: GHC2021
 
@@ -84,5 +103,5 @@ test-suite flatten-tests
     type:           exitcode-stdio-1.0
     hs-source-dirs: test
     main-is:        TestFlatten.hs
-    build-depends:  base ^>=4.18.3.0, containers ^>=0.7, JumpyImp, tasty ^>=1.5, tasty-hunit ^>=0.10
+    build-depends:  base >=4.18.3.0, containers ^>=0.7, JumpyImp, tasty ^>=1.5, tasty-hunit ^>=0.10
     default-language: GHC2021

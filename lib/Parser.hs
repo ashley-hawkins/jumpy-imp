@@ -164,12 +164,14 @@ pEnvArgument = do
   expression <- expr
   return (var, expression)
 
-stringToEnvArgument :: String -> Either (ParseErrorBundle Text Void) (VariableAccess, Expression)
+type ParserError = (ParseErrorBundle Text Void)
+
+stringToEnvArgument :: String -> Either ParserError (VariableAccess, Expression)
 stringToEnvArgument str =
   let txt = fromString str
    in parse (pEnvArgument <* eof) "" txt
 
-parseFileToProgram :: String -> Text -> Either (ParseErrorBundle Text Void) [Statement]
+parseFileToProgram :: String -> Text -> Either ParserError [Statement]
 parseFileToProgram = parse (pTopLevelStatementList <* (eof <?> "Top level EOF"))
 
 binaryOp opValue opText = InfixL ((\l r -> BinaryExpression (BinaryOp l opValue r)) <$ L.symbol sc opText)
