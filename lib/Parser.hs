@@ -86,13 +86,13 @@ pSwapStatement :: Parser StatementUniquePart
 pSwapStatement = do
   var1 <- pVariable
   _ <- symbol "<->"
-  SwapStatement var1 <$> pVariable <* some eol
+  SwapStatement var1 <$> pVariable
 
 pAssignmentStatement :: Parser StatementUniquePart
 pAssignmentStatement = do
   var <- pVariable
   _ <- symbol "<-"
-  AssignmentStatement var <$> expr <* some eol
+  AssignmentStatement var <$> expr
 
 pGoToStatement :: Parser StatementUniquePart
 pGoToStatement = do
@@ -103,7 +103,7 @@ pGoToStatement = do
 pReturnStatement :: Parser StatementUniquePart
 pReturnStatement = do
   _ <- pKeyword "return"
-  ReturnStatement <$> expr <* some eol
+  ReturnStatement <$> expr
 
 pIfStatementIntroduction :: Parser (Pos, Expression)
 pIfStatementIntroduction = do
@@ -120,7 +120,7 @@ pLiteral :: Parser Literal
 pLiteral = choice [pBool, pNumber]
 
 pTopLevelStatementList :: Parser [Statement]
-pTopLevelStatementList = L.nonIndented scn (some pStatement)
+pTopLevelStatementList = some (L.nonIndented scn pStatement)
 
 term :: Parser Expression
 term =
@@ -172,7 +172,7 @@ stringToEnvArgument str =
    in parse (pEnvArgument <* eof) "" txt
 
 parseFileToProgram :: String -> Text -> Either ParserError [Statement]
-parseFileToProgram = parse (pTopLevelStatementList <* (eof <?> "Top level EOF"))
+parseFileToProgram = parse (pTopLevelStatementList <* eof)
 
 binaryOp opValue opText = InfixL ((\l r -> BinaryExpression (BinaryOp l opValue r)) <$ L.symbol sc opText)
 
