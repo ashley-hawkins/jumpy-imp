@@ -45,8 +45,19 @@ parens = between (symbol "(") (symbol ")")
 pKeyword :: Text -> Parser Text
 pKeyword keyword = lexeme (string keyword <* notFollowedBy alphaNumChar)
 
-pVariable :: Parser VariableAccess
-pVariable = VariableAccess <$> lexeme ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_'))
+pVariableOnly :: Parser String
+pVariableOnly = lexeme ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_'))
+
+pSubscriptOnly :: Parser Expression
+pSubscriptOnly = between (symbol "[") (symbol "]") expr
+
+pVariableOrSubscript :: Parser VariableAccess
+pVariableOrSubscript = do
+  variableAccess <- pVariableOnly
+  subscript <- optional pSubscriptOnly
+  return $ case subscript of
+    Just index -> VariableSubscript variableAccess index
+    Nothing -> DirectVariableAccess variableAccess
 
 pInt :: Parser Literal
 pInt = LiteralFloat <$> lexeme L.decimal <?> "integer literal"
@@ -84,13 +95,13 @@ pIfStatementSecondPart expectedIndentation = snd <$> pIfStatementHelper (pKeywor
 
 pSwapStatement :: Parser StatementUniquePart
 pSwapStatement = do
-  var1 <- pVariable
+  var1 <- pVariableOrSubscript
   _ <- symbol "<->"
-  SwapStatement var1 <$> pVariable
+  SwapStatement var1 <$> pVariableOrSubscript
 
 pAssignmentStatement :: Parser StatementUniquePart
 pAssignmentStatement = do
-  var <- pVariable
+  var <- pVariableOrSubscript
   _ <- symbol "<-"
   AssignmentStatement var <$> expr
 
@@ -122,11 +133,18 @@ pLiteral = choice [pBool, pNumber]
 pTopLevelStatementList :: Parser [Statement]
 pTopLevelStatementList = some (L.nonIndented scn pStatement)
 
+pBuildExpression :: Parser Expression
+pBuildExpression = do
+  _ <- pKeyword "build"
+  length <- parens expr
+  return (BuildExpression length)
+
 term :: Parser Expression
 term =
   choice
-    [ LiteralExpression <$> pLiteral,
-      VariableExpression <$> pVariable,
+    [ try pBuildExpression,
+      LiteralExpression <$> pLiteral,
+      VariableExpression <$> pVariableOrSubscript,
       parens expr
     ]
 
@@ -159,7 +177,7 @@ table =
 
 pEnvArgument :: Parser (VariableAccess, Expression)
 pEnvArgument = do
-  var <- pVariable
+  var <- pVariableOrSubscript
   _ <- symbol ":"
   expression <- expr
   return (var, expression)
@@ -174,6 +192,6 @@ stringToEnvArgument str =
 parseFileToProgram :: String -> Text -> Either ParserError [Statement]
 parseFileToProgram = parse (pTopLevelStatementList <* eof)
 
-binaryOp opValue opText = InfixL ((\l r -> BinaryExpression (BinaryOp l opValue r)) <$ L.symbol sc opText)
+binaryOp opValue opText = InfixL ((\l r -> BinaryExpression (BinaryOp l opValue r)) <$ symbol opText)
 
-unaryOp opValue opText = Prefix ((UnaryExpression . UnaryOp opValue) <$ L.symbol sc opText)
+unaryOp opValue opText = Prefix ((UnaryExpression . UnaryOp opValue) <$ symbol opText)

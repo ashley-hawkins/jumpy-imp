@@ -1,7 +1,7 @@
 -- Everything needed to represent the AST basically.
 module Language where
 
-data BinaryOperator = Addition | Subtraction | Multiplication | Division | Lt | Gt | Lte | Gte | Eq | Neq | And | Or
+data BinaryOperator = Addition | Subtraction | Multiplication | Division | Lt | Gt | Lte | Gte | Eq | Neq | And | Or | Subscript
   deriving (Show, Eq)
 
 data UnaryOperator = UnaryNegate | UnaryPlus | UnaryNot
@@ -53,7 +53,7 @@ data UnaryOp = UnaryOp
 data Literal = LiteralFloat Double | LiteralBool Bool
   deriving (Show, Eq)
 
-newtype VariableAccess = VariableAccess String
+data VariableAccess = DirectVariableAccess String | VariableSubscript String Expression
   deriving (Show, Eq)
 
 data Expression
@@ -61,4 +61,7 @@ data Expression
   | UnaryExpression UnaryOp
   | LiteralExpression Literal
   | VariableExpression VariableAccess
+  | BuildExpression
+      { buildLength :: Expression
+      }
   deriving (Show, Eq)

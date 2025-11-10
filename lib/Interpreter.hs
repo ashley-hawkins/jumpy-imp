@@ -7,8 +7,10 @@ module Interpreter where
 
 import Data.Aeson (ToJSON)
 import Data.Aeson.Types (FromJSON)
+import Data.List qualified as List
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.String (IsString (fromString))
 import Data.Text (Text, pack)
 import Data.Text qualified as T
 import Data.Text.Lazy (unpack)
@@ -22,6 +24,7 @@ import Text.Pretty.Simple (pShow)
 data SingleValue
   = NumericValue Double
   | BoolValue Bool
+  | Undefined
   deriving (Show, Eq, Generic)
 
 instance ToJSON SingleValue
@@ -30,7 +33,9 @@ instance FromJSON SingleValue
 
 type Environment = Map String Value
 
-data Value = Single SingleValue | Array [SingleValue] | Undefined
+data FinalisedVariableAccess = FinalisedDirectAccess String | FinalisedSubscript String Int
+
+data Value = Single SingleValue | Array [SingleValue]
   deriving (Show, Eq, Generic)
 
 instance ToJSON Value
@@ -79,12 +84,33 @@ evaluateLiteral env lit = case lit of
   LiteralFloat n -> Single (NumericValue n)
   LiteralBool b -> Single (BoolValue b)
 
+floatRepresentsInteger :: Double -> Bool
+floatRepresentsInteger n = n == fromIntegral (truncate n)
+
+finaliseVariableAccess :: Environment -> VariableAccess -> Result FinalisedVariableAccess
+finaliseVariableAccess env var = case var of
+  DirectVariableAccess v -> Right $ FinalisedDirectAccess v
+  VariableSubscript v indexExpr -> do
+    indexResult <- evaluateExpression env indexExpr
+    case indexResult of
+      Single (NumericValue index) ->
+        if floatRepresentsInteger index
+          then Right $ FinalisedSubscript v (truncate index)
+          else Left "Array index must be an integer"
+      _ -> Left "Invalid array subscript"
+
 evaluateBinaryOp :: Environment -> BinaryOp -> Result Value
 evaluateBinaryOp env (BinaryOp left op right) = do
   leftVal <- evaluateExpression env left
   rightVal <- evaluateExpression env right
   case (leftVal, rightVal) of
-    (leftVal, rightVal) | leftVal == Undefined || rightVal == Undefined -> Left "Undefined value in binary operation"
+    (leftVal, rightVal) | leftVal == Single Undefined || rightVal == Single Undefined -> Left "Undefined value in binary operation"
+    (Array l, Single (NumericValue r)) -> case op of
+      Subscript ->
+        if floatRepresentsInteger r
+          then
+            Right (Array (take (floor r) l))
+          else Left "Array subscript must be an integer"
     (Single (NumericValue l), Single (NumericValue r)) -> case op of
       Addition -> Right (Single (NumericValue (l + r)))
       Subtraction -> Right (Single (NumericValue (l - r)))
@@ -112,17 +138,49 @@ evaluateUnaryOp env (UnaryOp op operand) = do
     (UnaryNot, Single (BoolValue b)) -> Right (Single (BoolValue (not b)))
     _ -> Left "Type mismatch in unary operation"
 
+evaluateBuildExpression :: Environment -> Expression -> Result Value
+evaluateBuildExpression env lengthExpr = do
+  lengthVal <- evaluateExpression env lengthExpr
+
+  case lengthVal of
+    Single (NumericValue n) ->
+      if floatRepresentsInteger n
+        then Right (Array (replicate (floor n) Undefined))
+        else Left "Invalid length for build expression. Length must be an integer."
+    _ -> Left "Invalid length for build expression. Length must be a number."
+
 evaluateExpression :: Environment -> Expression -> Result Value
 evaluateExpression env expr = case expr of
   LiteralExpression lit -> Right $ evaluateLiteral env lit
-  VariableExpression (VariableAccess var) -> Right $ Map.findWithDefault Undefined var env
+  VariableExpression var -> do
+    finalVar <- finaliseVariableAccess env var
+    getVariable env finalVar
   BinaryExpression binaryOp -> evaluateBinaryOp env binaryOp
   UnaryExpression unaryOp -> evaluateUnaryOp env unaryOp
+  BuildExpression lengthExpr -> evaluateBuildExpression env lengthExpr
 
-swapVariables :: Environment -> String -> String -> Result Environment
-swapVariables env var1 var2 = case (Map.lookup var1 env, Map.lookup var2 env) of
-  (Just (Single v1), Just (Single v2)) -> Right $ Map.insert var1 (Single v2) (Map.insert var2 (Single v1) env)
-  _ -> Left "Undefined variable in swap"
+setVariable :: Environment -> FinalisedVariableAccess -> Value -> Result Environment
+setVariable env var value = case var of
+  FinalisedDirectAccess v -> Right $ Map.insert v value env
+  FinalisedSubscript v index -> case value of
+    Single val -> case Map.findWithDefault (Single Undefined) v env of
+      Array arr ->
+        if index < List.length arr
+          then Right $ Map.insert v (Array (List.take index arr ++ [val] ++ List.drop (index + 1) arr)) env
+          else Left $ fromString ("Array index " ++ show index ++ " is out of bounds, array " ++ v ++ ", " ++ show arr ++ " has length " ++ show (List.length arr))
+      _ -> Left "Invalid array subscript"
+    _ -> Left "Arrays can't contain arrays (yet)."
+
+getVariable :: Environment -> FinalisedVariableAccess -> Result Value
+getVariable env var = case var of
+  FinalisedDirectAccess v -> Right $ Map.findWithDefault (Single Undefined) v env
+  FinalisedSubscript v index -> do
+    case Map.findWithDefault (Single Undefined) v env of
+      Array arr ->
+        if index < length arr
+          then Right . Single $ arr !! index
+          else Left "Array index out of bounds"
+      _ -> Left "Invalid array subscript"
 
 evaluateJumpInstruction :: Environment -> Int -> Maybe Expression -> Result ControlFlow
 evaluateJumpInstruction env n condition = case condition of
@@ -136,10 +194,14 @@ evaluateJumpInstruction env n condition = case condition of
       Right _ -> Left "Invalid condition for jump: Not a boolean"
       Left err -> Left $ T.pack ("Invalid condition for jump: " ++ show err)
 
-assignVariable :: Environment -> String -> Expression -> Result Environment
-assignVariable env var value = do
-  evaluatedValue <- evaluateExpression env value
-  return $ Map.insert var evaluatedValue env
+swapVariables :: Environment -> VariableAccess -> VariableAccess -> Result Environment
+swapVariables env var1 var2 = do
+  var1final <- finaliseVariableAccess env var1
+  var2final <- finaliseVariableAccess env var2
+  val1 <- getVariable env var1final
+  val2 <- getVariable env var2final
+  setVariable env var1final val2
+  setVariable env var2final val1
 
 interpretStep :: Environment -> Instruction -> (Environment, Result ControlFlow)
 interpretStep env instr = do
@@ -148,10 +210,13 @@ interpretStep env instr = do
     Flatten.Jump n condition -> case evaluateJumpInstruction env n condition of
       Right ctrlFlow -> (env, Right ctrlFlow)
       Left err -> (env, Left err)
-    Flatten.SwapVariables (VariableAccess var1) (VariableAccess var2) -> case swapVariables env var1 var2 of
+    Flatten.SwapVariables var1 var2 -> case swapVariables env var1 var2 of
       Right newEnv -> (newEnv, Right Continue)
       Left err -> (env, Left err)
-    Flatten.AssignVariable (VariableAccess var) value -> case assignVariable env var value of
+    Flatten.AssignVariable var value -> case do
+      finalAccess <- finaliseVariableAccess env var
+      finalValue <- evaluateExpression env value
+      setVariable env finalAccess finalValue of
       Right newEnv -> (newEnv, Right Continue)
       Left err -> (env, Left err)
     Flatten.ReturnValue valueExpr -> case evaluateExpression env valueExpr of
