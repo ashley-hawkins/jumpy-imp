@@ -167,11 +167,11 @@ table =
       binaryOp Eq "=",
       binaryOp Neq "/="
     ],
-    [ binaryOp Or "||"
+    [ binaryOp Or "or"
     ],
-    [ binaryOp And "&&"
+    [ binaryOp And "and"
     ],
-    [ unaryOp UnaryNot "!"
+    [ unaryOp UnaryNot "not"
     ]
   ]
 
