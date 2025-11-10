@@ -1,6 +1,10 @@
 # JumpyImp
 
-Unimplemented features: Arrays
+Arrays are implemented now but they haven't been tested very much.
+
+Web demo is available at https://users.sussex.ac.uk/~ah2084/ji
+
+Operator precedence hasn't been tested that much yet. If in doubt, use parentheses to disambiguate.
 
 Unlike in slides, commented and empty lines do count towards the line numbers used for `goto line` statements.
 
