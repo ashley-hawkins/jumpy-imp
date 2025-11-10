@@ -145,7 +145,7 @@ evaluateBuildExpression env lengthExpr = do
   case lengthVal of
     Single (NumericValue n) ->
       if floatRepresentsInteger n
-        then Right (Array (replicate (floor n) Undefined))
+        then Right (Array (replicate (floor n) (NumericValue 0.0)))
         else Left "Invalid length for build expression. Length must be an integer."
     _ -> Left "Invalid length for build expression. Length must be a number."
 
