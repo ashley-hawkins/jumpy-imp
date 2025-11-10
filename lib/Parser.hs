@@ -139,13 +139,26 @@ pBuildExpression = do
   length <- parens expr
   return (BuildExpression length)
 
+nonLiteralTerm :: Parser Expression
+nonLiteralTerm =
+  choice
+    [ try pBuildExpression,
+      VariableExpression <$> pVariableOrSubscript,
+      parens expr
+    ]
+
+literalMultiplyByNonLiteralTerm :: Parser Expression
+literalMultiplyByNonLiteralTerm = do
+  left <- pNumber
+  BinaryExpression . BinaryOp (LiteralExpression left) Multiplication <$> nonLiteralTerm
+
 term :: Parser Expression
 term =
   choice
-    [ try pBuildExpression,
+    [
+      try literalMultiplyByNonLiteralTerm,
       LiteralExpression <$> pLiteral,
-      VariableExpression <$> pVariableOrSubscript,
-      parens expr
+      nonLiteralTerm
     ]
 
 expr :: Parser Expression
