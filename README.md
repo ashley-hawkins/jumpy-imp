@@ -1,6 +1,6 @@
 # JumpyImp
 
-Arrays are implemented now but they haven't been tested very much.
+Arrays are implemented now but they haven't been tested very much. Also they're implemented with Haskell Lists so I think they're actualy O(n) access time instead of O(1), oops!
 
 Web demo is available at https://users.sussex.ac.uk/~ah2084/ji
 
