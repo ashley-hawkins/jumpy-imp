@@ -177,7 +177,7 @@ table =
       unaryOp UnaryPlus "+"
     ],
     [ binaryOp Multiplication "*",
-      binaryOp Division "/"
+      InfixL ((\l r -> BinaryExpression (BinaryOp l Division r)) <$ try (symbol "/" <* notFollowedBy (char '=')))
     ],
     [ binaryOp Gte ">=",
       binaryOp Lte "<=",
