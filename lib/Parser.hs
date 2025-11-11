@@ -24,6 +24,9 @@ type Input = Text
 
 type Parser a = Parsec Error Input a
 
+keywords :: [String]
+keywords = ["if", "then", "else", "return", "goto", "line", "true", "false"]
+
 lineComment :: Parser ()
 lineComment = L.skipLineComment "//"
 
@@ -46,7 +49,11 @@ pKeyword :: Text -> Parser Text
 pKeyword keyword = lexeme (string keyword <* notFollowedBy alphaNumChar)
 
 pVariableOnly :: Parser String
-pVariableOnly = lexeme ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_'))
+pVariableOnly = try $ do
+  res <- lexeme ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_')) <?> "identifier"
+  if res `elem` keywords
+    then fail $ "keyword " ++ show res ++ " cannot be used as an identifier"
+    else return res
 
 pSubscriptOnly :: Parser Expression
 pSubscriptOnly = between (symbol "[") (symbol "]") expr
@@ -155,8 +162,7 @@ literalMultiplyByNonLiteralTerm = do
 term :: Parser Expression
 term =
   choice
-    [
-      try literalMultiplyByNonLiteralTerm,
+    [ try literalMultiplyByNonLiteralTerm,
       LiteralExpression <$> pLiteral,
       nonLiteralTerm
     ]
