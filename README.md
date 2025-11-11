@@ -21,3 +21,21 @@ Example of how to use it:
 `cabal run JumpyImp -- even.ji n:11` (Should return false)
 
 In general, the first argument is the file name of the program you want to run, and the other arguments are setting initial values for input variables, so `n:10` means give `n` a value of `10`.
+
+# Table of operators in slides to operators in the implementation
+
+
+| Slides | Implementation |
+| --- | --- |
+| ≥ | >= |
+| ≤ | <= |
+| ≠ | /= |
+| × | * |
+| > | > |
+| < | < |
+| = | = |
+| + | + |
+| - | - |
+| and | and |
+| or | or |
+| not | not |
